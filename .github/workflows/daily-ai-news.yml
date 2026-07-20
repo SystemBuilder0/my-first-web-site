@@ -30,6 +30,9 @@ jobs:
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
         run: python daily_ai_news.py
 
+      - name: Regenerate news site pages
+        run: python generate_news_site.py
+
       - name: Commit summary to repo
         run: |
           git config user.name "github-actions[bot]"
