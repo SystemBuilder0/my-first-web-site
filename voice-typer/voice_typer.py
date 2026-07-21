@@ -9,6 +9,13 @@
      (b) 항상 떠 있는 안전창(overlay)에도 남긴다. 커서가 없어서 (a)가
      실패해도 (b) 덕분에 텍스트가 사라지지 않는다.
 
+오디오 입력은 sounddevice(PortAudio)가 아니라 soundcard(WASAPI) 라이브러리를
+쓴다. PortAudio는 초기화할 때 WDM-KS 등 모든 오디오 백엔드의 장치를 훑는데,
+일부 다채널 오디오 인터페이스(예: Antelope ZenGo SC) 드라이버에서 이 과정이
+그대로 프로세스를 죽여버리는 문제가 있었다. soundcard는 WASAPI만 쓰기 때문에
+이 문제를 피해간다 (Premiere Pro 등 일반 프로그램도 WASAPI/ASIO로 접근해서
+문제없이 녹음되는 것과 같은 이유).
+
 주의: GPU(NVIDIA, VRAM 8GB+)와 마이크가 있는 실제 PC에서 실행해야 한다.
       이 코드는 개발 환경(원격 리눅스 샌드박스, GPU/마이크 없음)에서
       문법 확인만 했고, 실제 녹음·GPU 추론·전역 단축키 동작은 검증하지
@@ -16,13 +23,11 @@
       단계별로 확인할 것.
 """
 
-import queue
 import sys
 import threading
-import time
 
 import numpy as np
-import sounddevice as sd
+import soundcard as sc
 import keyboard
 from faster_whisper import WhisperModel
 
@@ -36,11 +41,29 @@ def rms_dbfs(block: np.ndarray) -> float:
     return 20 * np.log10(rms + 1e-12)
 
 
+def pick_microphone(safety_window: SafetyWindow):
+    """config.MIC_NAME과 이름이 겹치는 마이크를 고르고, 없으면 시스템 기본 마이크."""
+    if config.MIC_NAME:
+        try:
+            mic = sc.get_microphone(config.MIC_NAME, include_loopback=False)
+            safety_window.append(f"[마이크 선택] {mic.name}")
+            return mic
+        except Exception as exc:
+            safety_window.append(
+                f"[마이크 '{config.MIC_NAME}'을 못 찾음: {exc} - 기본 마이크로 대체]"
+            )
+    mic = sc.default_microphone()
+    safety_window.append(f"[마이크 선택 - 기본값] {mic.name}")
+    return mic
+
+
 class VoiceTyper:
     def __init__(self, safety_window: SafetyWindow):
         self.safety_window = safety_window
-        self.safety_window.append(f"[모델 로딩 중] {config.MODEL_SIZE} / {config.DEVICE}")
 
+        self.mic = pick_microphone(safety_window)
+
+        self.safety_window.append(f"[모델 로딩 중] {config.MODEL_SIZE} / {config.DEVICE}")
         self.model = WhisperModel(
             config.MODEL_SIZE,
             device=config.DEVICE,
@@ -50,8 +73,9 @@ class VoiceTyper:
 
         self.recording = False
         self._frames: list[np.ndarray] = []
-        self._stream: sd.InputStream | None = None
         self._lock = threading.Lock()
+        self._stop_event: threading.Event | None = None
+        self._record_thread: threading.Thread | None = None
 
     # ---------------- 공통: 녹음 -> 변환 -> 출력 ----------------
 
@@ -69,6 +93,7 @@ class VoiceTyper:
         )
         text = "".join(seg.text for seg in segments).strip()
         if not text:
+            self.safety_window.append("[인식된 말이 없음]")
             return
 
         self.safety_window.append(text)
@@ -83,9 +108,13 @@ class VoiceTyper:
 
     # ---------------- MODE == "toggle" ----------------
 
-    def _audio_callback(self, indata, frames, time_info, status):
-        with self._lock:
-            self._frames.append(indata.copy().reshape(-1))
+    def _record_loop(self, stop_event: threading.Event):
+        block_size = int(config.SAMPLE_RATE * 0.05)  # 50ms 씩 읽음
+        with self.mic.recorder(samplerate=config.SAMPLE_RATE, channels=1) as rec:
+            while not stop_event.is_set():
+                data = rec.record(numframes=block_size)
+                with self._lock:
+                    self._frames.append(data.reshape(-1).astype("float32"))
 
     def toggle_recording(self):
         with self._lock:
@@ -94,18 +123,15 @@ class VoiceTyper:
 
         if starting:
             self._frames = []
-            self._stream = sd.InputStream(
-                samplerate=config.SAMPLE_RATE,
-                channels=1,
-                dtype="float32",
-                callback=self._audio_callback,
+            self._stop_event = threading.Event()
+            self._record_thread = threading.Thread(
+                target=self._record_loop, args=(self._stop_event,), daemon=True
             )
-            self._stream.start()
+            self._record_thread.start()
             self.safety_window.append("[녹음 시작]")
         else:
-            self._stream.stop()
-            self._stream.close()
-            self._stream = None
+            self._stop_event.set()
+            self._record_thread.join(timeout=5)
             self.safety_window.append("[녹음 종료 - 변환 중...]")
             with self._lock:
                 audio = np.concatenate(self._frames) if self._frames else np.array([], dtype="float32")
@@ -120,15 +146,10 @@ class VoiceTyper:
         silence_ms = 0
         buffer: list[np.ndarray] = []
 
-        with sd.InputStream(
-            samplerate=config.SAMPLE_RATE,
-            channels=1,
-            dtype="float32",
-            blocksize=block_size,
-        ) as stream:
+        with self.mic.recorder(samplerate=config.SAMPLE_RATE, channels=1) as rec:
             while not stop_event.is_set():
-                block, _overflow = stream.read(block_size)
-                block = block.reshape(-1)
+                data = rec.record(numframes=block_size)
+                block = data.reshape(-1).astype("float32")
                 level = rms_dbfs(block)
 
                 if level >= config.VAD_DB_THRESHOLD:
@@ -154,17 +175,17 @@ class VoiceTyper:
             self.recording = starting
 
         if starting:
-            self._vad_stop_event = threading.Event()
-            self._vad_thread = threading.Thread(
-                target=self._vad_loop, args=(self._vad_stop_event,), daemon=True
+            self._stop_event = threading.Event()
+            self._record_thread = threading.Thread(
+                target=self._vad_loop, args=(self._stop_event,), daemon=True
             )
-            self._vad_thread.start()
+            self._record_thread.start()
             self.safety_window.append(
                 f"[상시 감지 모드 ON] 기준 {config.VAD_DB_THRESHOLD} dBFS"
             )
         else:
-            self._vad_stop_event.set()
-            self._vad_thread.join(timeout=2)
+            self._stop_event.set()
+            self._record_thread.join(timeout=2)
             self.safety_window.append("[상시 감지 모드 OFF]")
 
 

@@ -68,6 +68,27 @@ python voice_typer.py
    안 됐다면 `keyboard.write()`가 관리자 권한 문제로 막혔을 가능성이 큼 →
    관리자 권한으로 재실행.
 
+## 여러 채널을 가진 오디오 인터페이스(ZenGo SC 등) 쓸 때
+
+오디오 입력은 `sounddevice`(PortAudio)가 아니라 `soundcard`(WASAPI)를 쓴다.
+PortAudio는 초기화할 때 모든 오디오 백엔드(WDM-KS 포함)의 장치를 훑는데, 일부
+다채널 인터페이스(Antelope ZenGo SC 등) 드라이버에서 이 과정 자체가 프로세스를
+통째로 죽여버리는 게 실제로 확인됐다 (에러 메시지도 없이 그냥 종료됨).
+Premiere Pro 같은 프로그램은 WASAPI/ASIO로 접근해서 문제없이 녹음되는 것과
+같은 이유로, `soundcard`(WASAPI 전용)로 바꾸면 이 문제를 피해간다.
+
+`config.py`의 `MIC_NAME`에 원하는 마이크 이름의 일부를 적으면 된다:
+
+```python
+MIC_NAME = "ZenGo"
+```
+
+실행하면 안전창에 `[마이크 선택] <실제로 골라진 장치 전체 이름>`이 찍힌다.
+ZenGo SC처럼 채널이 여러 쌍(1/2, 3/4, 5/6, 7/8)인 인터페이스는 이름이 겹쳐서
+엉뚱한 채널이 골라질 수 있다. 그럴 땐 안전창에 찍힌 전체 이름을 그대로
+`MIC_NAME`에 붙여넣어 정확히 지정하면 된다 (예: `"ZenGo SC USB Audio Driver Recording 1/2"`).
+`MIC_NAME = None`으로 두면 윈도우 기본 마이크를 그대로 쓴다.
+
 ## 설정 바꾸기 (`config.py`)
 
 | 값 | 설명 |
@@ -80,6 +101,7 @@ python voice_typer.py
 | `VAD_DB_THRESHOLD` | `MODE="vad"`일 때 말하는 중으로 판단하는 dB 기준. 값이 부정확하면 너무 자주/안 끊기니 실사용하면서 조정 |
 | `VAD_SILENCE_MS` | 이만큼(ms) 조용하면 한 문장 끝으로 보고 바로 변환 시작 |
 | `TYPE_AT_CURSOR` | `False`로 하면 실제 타이핑은 안 하고 안전창에만 기록 |
+| `MIC_NAME` | 사용할 마이크 이름의 일부 (예: `"ZenGo"`). `None`이면 윈도우 기본 마이크 사용 |
 
 ## 알려진 제약
 
