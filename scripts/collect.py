@@ -1,23 +1,29 @@
-"""Daily news collection script.
+"""Daily news collection script (stage 1 of 2).
 
 Reads RSS feeds listed in feeds.yaml, keeps only articles published within
 the last N days (DAYS_BACK, default 2), deduplicates against a repo-committed
-state file (data/seen_urls.json), archives each day's newly collected
-articles under data/archive/YYYY-MM-DD.json, and pushes each new article as
-a page into a Notion database via the Notion REST API.
+state file (data/seen_urls.json), and archives each day's newly collected
+articles (including a short snippet from the feed) under
+data/archive/YYYY-MM-DD.json.
+
+This script is intentionally AI-free: it only collects and archives raw
+candidates. scripts/summarize.py (stage 2) reads that archive, picks the
+single most important story per topic, and writes one consolidated daily
+digest. Optionally pushes each raw article to a Notion database via
+NOTION_RAW_DATABASE_ID for traceability/backend archival (not the
+user-facing surface).
 
 If the NOTION_TOKEN environment variable is not set, the script runs in
 "dry-run" mode: it still parses feeds, dedupes, and writes the local state
 files, but skips the actual Notion API calls and instead prints what it
 would have sent. This makes local testing possible without credentials.
-
-No LLM/AI is used anywhere in this script.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -34,6 +40,7 @@ ARCHIVE_DIR = REPO_ROOT / "data" / "archive"
 
 NOTION_API_VERSION = "2022-06-28"
 NOTION_PAGES_URL = "https://api.notion.com/v1/pages"
+# Raw per-article archive DB (backend only; not the user-facing digest).
 DEFAULT_DATABASE_ID = "72e48124a9fc49819fff9dcc69c9c61b"
 
 MAX_SEEN_URLS = 500
@@ -82,6 +89,9 @@ def fetch_articles(feed_config: dict, cutoff_date: date) -> list[dict]:
         if published_dt < cutoff_date:
             continue
 
+        raw_snippet = entry.get("summary", "") or entry.get("description", "")
+        snippet = re.sub(r"<[^>]+>", "", raw_snippet).strip()[:500]
+
         articles.append(
             {
                 "title": title,
@@ -89,6 +99,7 @@ def fetch_articles(feed_config: dict, cutoff_date: date) -> list[dict]:
                 "source": feed_config["source"],
                 "topic": feed_config["topic"],
                 "published": published,
+                "snippet": snippet,
             }
         )
 
@@ -189,7 +200,7 @@ def push_to_notion(article: dict, token: str, database_id: str, collected_date: 
 def main() -> None:
     days_back = int(os.environ.get("DAYS_BACK", "2"))
     notion_token = os.environ.get("NOTION_TOKEN")
-    database_id = os.environ.get("NOTION_DATABASE_ID", DEFAULT_DATABASE_ID)
+    database_id = os.environ.get("NOTION_RAW_DATABASE_ID", DEFAULT_DATABASE_ID)
     dry_run = not notion_token
 
     today = date.today()
