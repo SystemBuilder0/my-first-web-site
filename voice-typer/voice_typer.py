@@ -41,7 +41,15 @@ def _register_nvidia_dll_dirs():
     except ImportError:
         return
     for mod in (nvidia.cublas, nvidia.cudnn):
-        bin_dir = os.path.join(os.path.dirname(mod.__file__), "bin")
+        # nvidia.cublas/nvidia.cudnn은 __init__.py가 없는 네임스페이스 패키지라
+        # __file__이 None이다. 대신 __path__에서 실제 설치 위치를 가져온다.
+        base_dir = mod.__file__ and os.path.dirname(mod.__file__)
+        if not base_dir:
+            paths = list(getattr(mod, "__path__", []))
+            base_dir = paths[0] if paths else None
+        if not base_dir:
+            continue
+        bin_dir = os.path.join(base_dir, "bin")
         if os.path.isdir(bin_dir):
             os.add_dll_directory(bin_dir)
 
