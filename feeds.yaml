@@ -1,0 +1,46 @@
+# RSS feed sources for the daily news collection job.
+# Each entry:
+#   url    - RSS feed URL
+#   source - display name stored in the Notion "출처" (source) property
+#   topic  - must be exactly one of:
+#            "AI 시장", "AI 활용", "로보틱스", "바이오", "유튜브·SNS"
+
+- url: https://techcrunch.com/category/artificial-intelligence/feed/
+  source: TechCrunch AI
+  topic: AI 시장
+
+- url: https://www.theverge.com/artificial-intelligence/rss/index.xml
+  source: The Verge AI
+  topic: AI 시장
+
+- url: https://www.technologyreview.com/topic/artificial-intelligence/feed
+  source: MIT Technology Review AI
+  topic: AI 활용
+
+- url: http://feeds.arstechnica.com/arstechnica/index
+  source: Ars Technica
+  topic: AI 활용
+
+- url: https://spectrum.ieee.org/feeds/topic/robotics.rss
+  source: IEEE Spectrum Robotics
+  topic: 로보틱스
+
+- url: https://www.therobotreport.com/feed/
+  source: The Robot Report
+  topic: 로보틱스
+
+- url: https://www.statnews.com/feed/
+  source: STAT News
+  topic: 바이오
+
+- url: https://www.sciencedaily.com/rss/plants_animals/biotechnology.xml
+  source: Science Daily Biotechnology
+  topic: 바이오
+
+- url: https://www.socialmediatoday.com/feeds/news/
+  source: Social Media Today
+  topic: 유튜브·SNS
+
+- url: https://techcrunch.com/category/social/feed/
+  source: TechCrunch Social
+  topic: 유튜브·SNS
