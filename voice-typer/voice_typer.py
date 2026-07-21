@@ -23,8 +23,30 @@
       단계별로 확인할 것.
 """
 
+import os
 import sys
 import threading
+
+
+def _register_nvidia_dll_dirs():
+    """pip로 설치된 nvidia-cublas-cu12/nvidia-cudnn-cu12의 DLL 폴더를 이 프로세스의
+    DLL 검색 경로에 등록한다. 이렇게 하면 PATH 환경변수를 수동으로 건드리지 않아도
+    ctranslate2가 cublas64_12.dll 등을 찾을 수 있다. faster_whisper를 import하기
+    전에 실행해야 한다."""
+    if sys.platform != "win32":
+        return
+    try:
+        import nvidia.cublas
+        import nvidia.cudnn
+    except ImportError:
+        return
+    for mod in (nvidia.cublas, nvidia.cudnn):
+        bin_dir = os.path.join(os.path.dirname(mod.__file__), "bin")
+        if os.path.isdir(bin_dir):
+            os.add_dll_directory(bin_dir)
+
+
+_register_nvidia_dll_dirs()
 
 import numpy as np
 import soundcard as sc
