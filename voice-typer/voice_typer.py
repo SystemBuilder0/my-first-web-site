@@ -29,29 +29,39 @@ import threading
 
 
 def _register_nvidia_dll_dirs():
-    """pip로 설치된 nvidia-cublas-cu12/nvidia-cudnn-cu12의 DLL 폴더를 이 프로세스의
-    DLL 검색 경로에 등록한다. 이렇게 하면 PATH 환경변수를 수동으로 건드리지 않아도
-    ctranslate2가 cublas64_12.dll 등을 찾을 수 있다. faster_whisper를 import하기
-    전에 실행해야 한다."""
+    """pip로 설치된 nvidia-* 패키지(cublas, cudnn, cuda_nvrtc 등)의 DLL 폴더를
+    이 프로세스가 찾을 수 있게 등록한다. faster_whisper를 import하기 전에 실행해야 한다.
+
+    두 가지 방법을 모두 쓴다:
+      1) os.add_dll_directory  - 파이썬 확장 모듈(.pyd) 로딩용 표준 방식.
+      2) os.environ['PATH'] 앞에 직접 추가 - ctranslate2는 cublas64_12.dll을
+         실행 도중 옛날 방식(LoadLibrary)으로 부르는데, 이건 add_dll_directory로
+         추가한 경로를 참조하지 않는다. 그래서 PATH에도 직접 넣어야 확실히 찾는다.
+         (예전에 'set PATH=...'를 손으로 했을 때만 됐던 이유가 이것이다.)
+    """
     if sys.platform != "win32":
         return
     try:
-        import nvidia.cublas
-        import nvidia.cudnn
+        import nvidia
     except ImportError:
         return
-    for mod in (nvidia.cublas, nvidia.cudnn):
-        # nvidia.cublas/nvidia.cudnn은 __init__.py가 없는 네임스페이스 패키지라
-        # __file__이 None이다. 대신 __path__에서 실제 설치 위치를 가져온다.
-        base_dir = mod.__file__ and os.path.dirname(mod.__file__)
-        if not base_dir:
-            paths = list(getattr(mod, "__path__", []))
-            base_dir = paths[0] if paths else None
-        if not base_dir:
+
+    bin_dirs = []
+    for base in list(getattr(nvidia, "__path__", [])):
+        if not os.path.isdir(base):
             continue
-        bin_dir = os.path.join(base_dir, "bin")
-        if os.path.isdir(bin_dir):
+        for sub in os.listdir(base):  # cublas, cudnn, cuda_nvrtc, ...
+            bin_dir = os.path.join(base, sub, "bin")
+            if os.path.isdir(bin_dir):
+                bin_dirs.append(bin_dir)
+
+    for bin_dir in bin_dirs:
+        try:
             os.add_dll_directory(bin_dir)
+        except OSError:
+            pass
+    if bin_dirs:
+        os.environ["PATH"] = os.pathsep.join(bin_dirs) + os.pathsep + os.environ.get("PATH", "")
 
 
 _register_nvidia_dll_dirs()
