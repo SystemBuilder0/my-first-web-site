@@ -238,9 +238,9 @@ def main():
         typer = VoiceTyper(safety_window)
 
         if config.MODE == "toggle":
-            keyboard.add_hotkey(config.HOTKEY, typer.toggle_recording)
+            keyboard.add_hotkey(config.HOTKEY, typer.toggle_recording, suppress=config.SUPPRESS_HOTKEY)
         elif config.MODE == "vad":
-            keyboard.add_hotkey(config.HOTKEY, typer.toggle_vad)
+            keyboard.add_hotkey(config.HOTKEY, typer.toggle_vad, suppress=config.SUPPRESS_HOTKEY)
         else:
             print(f"알 수 없는 MODE: {config.MODE}", file=sys.stderr)
             sys.exit(1)
