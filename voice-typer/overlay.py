@@ -45,6 +45,30 @@ def _make_click_through(window: tk.Toplevel):
         pass
 
 
+def _force_redraw(window: tk.Toplevel):
+    """레이어드(반투명) 창은 배경색만 바뀌면 자동으로 다시 그려지지 않는 경우가
+    있어서, 색을 바꾼 뒤 강제로 repaint 시킨다. 실패해도 무시한다."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        RDW_INVALIDATE = 0x0001
+        RDW_ERASE = 0x0004
+        RDW_ALLCHILDREN = 0x0080
+        RDW_UPDATENOW = 0x0100
+
+        hwnd = window.winfo_id()
+        ctypes.windll.user32.RedrawWindow(
+            hwnd,
+            None,
+            None,
+            RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN | RDW_UPDATENOW,
+        )
+    except Exception:
+        pass
+
+
 def _make_circular(window: tk.Toplevel, size: int):
     """윈도우 자체를 지름 size인 원 모양으로 잘라낸다. Tk의 -transparentcolor
     (컬러키 투명) 방식보다 훨씬 안정적으로 동작한다."""
@@ -149,6 +173,9 @@ class SafetyWindow:
                         else config.INDICATOR_COLOR_IDLE
                     )
                     self._indicator_canvas.configure(bg=color)
+                    self._indicator_canvas.update_idletasks()
+                    if self._indicator is not None:
+                        _force_redraw(self._indicator)
         except queue.Empty:
             pass
 
