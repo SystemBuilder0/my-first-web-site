@@ -4,10 +4,15 @@
         인식된 텍스트는 전부 이 창에 남는다. 나중에 드래그해서 복사해 쓸 수 있다.
         최소화해놔도 상관없다.
 
-표시등: 화면 구석에 떠 있는 작은 원. 녹음 중엔 빨간색, 아닐 땐 회색이 되어서
-        안전창을 열어보지 않아도 녹음 상태를 바로 확인할 수 있다. 클릭도
-        그대로 아래 창으로 통과되게(click-through) 만들어서 작업에 방해되지
-        않는다.
+표시등: 화면 구석에 떠 있는 작은 원. 녹음 중엔 빨간색, 아닐 땐 반투명 회색이
+        되어서 안전창을 열어보지 않아도 녹음 상태를 바로 확인할 수 있다.
+        클릭도 그대로 아래 창으로 통과되게(click-through) 만들어서 작업에
+        방해되지 않는다.
+
+        원형 모양은 Tk의 "-transparentcolor"(컬러키 방식)가 아니라, 윈도우
+        자체를 타원형으로 잘라내는 SetWindowRgn을 쓴다. 컬러키 방식은 Tk/윈도우
+        조합에 따라 안 먹혀서 사각형 검은 박스로 보이는 문제가 있었다.
+        반투명은 "-alpha"(창 전체 투명도)로 처리한다.
 """
 
 import queue
@@ -40,6 +45,21 @@ def _make_click_through(window: tk.Toplevel):
         pass
 
 
+def _make_circular(window: tk.Toplevel, size: int):
+    """윈도우 자체를 지름 size인 원 모양으로 잘라낸다. Tk의 -transparentcolor
+    (컬러키 투명) 방식보다 훨씬 안정적으로 동작한다."""
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+
+        hwnd = window.winfo_id()
+        hrgn = ctypes.windll.gdi32.CreateEllipticRgn(0, 0, size, size)
+        ctypes.windll.user32.SetWindowRgn(hwnd, hrgn, True)
+    except Exception:
+        pass
+
+
 class SafetyWindow:
     def __init__(self):
         self._queue: "queue.Queue[str]" = queue.Queue()
@@ -48,7 +68,6 @@ class SafetyWindow:
         self._text = None
         self._indicator = None
         self._indicator_canvas = None
-        self._indicator_dot = None
 
     def start(self):
         """반드시 메인 스레드에서 호출 (tkinter 제약)."""
@@ -80,9 +99,9 @@ class SafetyWindow:
         self._indicator.overrideredirect(True)
         self._indicator.attributes("-topmost", True)
         try:
-            self._indicator.attributes("-transparentcolor", "black")
+            self._indicator.attributes("-alpha", config.INDICATOR_OPACITY)
         except tk.TclError:
-            pass  # 일부 환경에선 투명색 속성이 없을 수 있음 - 사각 배경으로 대체됨
+            pass  # 일부 환경에선 창 투명도 속성이 없을 수 있음 - 불투명하게 남음
 
         screen_w = self._indicator.winfo_screenwidth()
         screen_h = self._indicator.winfo_screenheight()
@@ -90,15 +109,16 @@ class SafetyWindow:
         self._indicator.geometry(f"{size}x{size}+{x}+{y}")
 
         self._indicator_canvas = tk.Canvas(
-            self._indicator, width=size, height=size, bg="black", highlightthickness=0
+            self._indicator,
+            width=size,
+            height=size,
+            bg=config.INDICATOR_COLOR_IDLE,
+            highlightthickness=0,
         )
         self._indicator_canvas.pack()
-        pad = 2
-        self._indicator_dot = self._indicator_canvas.create_oval(
-            pad, pad, size - pad, size - pad, fill=config.INDICATOR_COLOR_IDLE, outline=""
-        )
 
         self._indicator.update_idletasks()
+        _make_circular(self._indicator, size)
         _make_click_through(self._indicator)
 
     def append(self, text: str):
@@ -128,7 +148,7 @@ class SafetyWindow:
                         if is_recording
                         else config.INDICATOR_COLOR_IDLE
                     )
-                    self._indicator_canvas.itemconfig(self._indicator_dot, fill=color)
+                    self._indicator_canvas.configure(bg=color)
         except queue.Empty:
             pass
 
@@ -143,4 +163,4 @@ def _corner_position(corner: str, screen_w: int, screen_h: int, size: int, margi
         return margin, screen_h - size - margin
     if corner == "bottom-right":
         return screen_w - size - margin, screen_h - size - margin
-    return screen_w - size - margin, margin  # 기본값: top-right
+    return screen_w - size - margin, margin  # top-right

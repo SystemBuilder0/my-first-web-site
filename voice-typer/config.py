@@ -1,10 +1,11 @@
 """voice-typer 설정 파일. 값만 바꿔서 쓰면 됨."""
 
 # 이 키를 누르면 녹음 시작/종료가 토글됨 (keyboard 라이브러리 키 이름 규칙 사용).
-# F2는 오브시디언 등 여러 앱에서 "제목 바꾸기(rename)"에 쓰여서 충돌이 났다.
-# "scroll lock"은 요즘 거의 어떤 프로그램도 단축키로 안 쓰는 죽은 키라 안전하다.
-# 다른 후보: "pause" (Pause/Break 키)도 마찬가지로 거의 안 쓰임.
-HOTKEY = "scroll lock"
+# F2는 오브시디언 등 여러 앱에서 "제목 바꾸기(rename)"에 쓰이지만, 아래
+# SUPPRESS_HOTKEY가 켜져 있으면 그 앱으로 키 입력이 전달되지 않아서 충돌이
+# 안 생긴다. 그래도 계속 겹치는 앱이 있으면 "scroll lock"이나 "pause"로
+# 바꿔볼 것.
+HOTKEY = "f2"
 
 # True로 두면 HOTKEY를 누르는 순간 그 키 입력 자체가 현재 포커스된 프로그램으로
 # 전달되지 않도록 막는다 (keyboard.add_hotkey의 suppress 옵션). 이렇게 해야
@@ -61,11 +62,15 @@ SAFETY_WINDOW_GEOMETRY = "480x320+40+40"
 # 클릭도 그대로 통과시켜서(click-through) 작업에 방해되지 않는다.
 INDICATOR_ENABLED = True
 
-# 화면 어느 구석에 둘지: "top-right"(기본), "top-left", "bottom-right", "bottom-left"
-INDICATOR_CORNER = "top-right"
+# 화면 어느 구석에 둘지: "bottom-right"(기본), "top-right", "top-left", "bottom-left"
+INDICATOR_CORNER = "bottom-right"
 
 INDICATOR_SIZE = 22       # 지름(px)
-INDICATOR_MARGIN = 14     # 화면 가장자리로부터 여백(px)
+# 화면 가장자리로부터 여백(px). 작업표시줄(taskbar)에 가려지면 이 값을 늘릴 것.
+INDICATOR_MARGIN = 60
+
+# 0.0(완전 투명) ~ 1.0(완전 불투명). 반투명하게 보이려면 1.0보다 낮게.
+INDICATOR_OPACITY = 0.55
 
 INDICATOR_COLOR_IDLE = "#808080"        # 대기 중: 회색
 INDICATOR_COLOR_RECORDING = "#e03131"   # 녹음 중: 빨간색
