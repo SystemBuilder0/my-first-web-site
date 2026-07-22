@@ -55,3 +55,17 @@ TYPE_AT_CURSOR = True
 
 # 안전창(모든 인식 결과가 항상 남는 별도의 항상-위-창) 크기
 SAFETY_WINDOW_GEOMETRY = "480x320+40+40"
+
+# ---- 녹음 상태 표시등 (화면 구석의 작은 점) ----
+# 안전창을 열어보지 않아도 녹음 중인지 바로 확인할 수 있는 작은 원.
+# 클릭도 그대로 통과시켜서(click-through) 작업에 방해되지 않는다.
+INDICATOR_ENABLED = True
+
+# 화면 어느 구석에 둘지: "top-right"(기본), "top-left", "bottom-right", "bottom-left"
+INDICATOR_CORNER = "top-right"
+
+INDICATOR_SIZE = 22       # 지름(px)
+INDICATOR_MARGIN = 14     # 화면 가장자리로부터 여백(px)
+
+INDICATOR_COLOR_IDLE = "#808080"        # 대기 중: 회색
+INDICATOR_COLOR_RECORDING = "#e03131"   # 녹음 중: 빨간색

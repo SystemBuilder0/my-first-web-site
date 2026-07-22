@@ -169,10 +169,12 @@ class VoiceTyper:
             )
             self._record_thread.start()
             self.safety_window.append("[녹음 시작]")
+            self.safety_window.set_recording(True)
         else:
             self._stop_event.set()
             self._record_thread.join(timeout=5)
             self.safety_window.append("[녹음 종료 - 변환 중...]")
+            self.safety_window.set_recording(False)
             with self._lock:
                 audio = np.concatenate(self._frames) if self._frames else np.array([], dtype="float32")
                 self._frames = []
@@ -196,6 +198,7 @@ class VoiceTyper:
                     if not speaking:
                         speaking = True
                         self.safety_window.append("[말 시작 감지]")
+                        self.safety_window.set_recording(True)
                     buffer.append(block)
                     silence_ms = 0
                 elif speaking:
@@ -207,6 +210,7 @@ class VoiceTyper:
                         speaking = False
                         silence_ms = 0
                         self.safety_window.append("[문장 종료 - 변환 중...]")
+                        self.safety_window.set_recording(False)
                         self._run_transcription_async(audio)
 
     def toggle_vad(self):
@@ -227,6 +231,7 @@ class VoiceTyper:
             self._stop_event.set()
             self._record_thread.join(timeout=2)
             self.safety_window.append("[상시 감지 모드 OFF]")
+            self.safety_window.set_recording(False)
 
 
 def main():
