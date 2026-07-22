@@ -72,13 +72,19 @@ INDICATOR_MARGIN = 60
 # 0.0(완전 투명) ~ 1.0(완전 불투명). 반투명하게 보이려면 1.0보다 낮게.
 INDICATOR_OPACITY = 0.55
 
-INDICATOR_COLOR_IDLE = "#808080"        # 대기 중: 회색
-INDICATOR_COLOR_RECORDING = "#e03131"   # 녹음 중: 빨간색
+# 검은 화면/흰 화면/회색 화면 어디서든 묻히지 않으면서도 경고등처럼 튀지
+# 않는 색을 골랐다: 채도가 높고 명도는 중간인 색(청록/teal 계열)은
+# - 검은 배경보다는 밝고, 흰 배경보다는 어두워서 명도 대비가 항상 생기고
+# - 배경이 무채색(회색)이어도 색상(hue) 자체가 도드라져 보인다.
+# 빨강/주황처럼 "경고·긴급" 느낌을 주지 않아 은은하게 계속 떠 있어도 부담이 없다.
+INDICATOR_COLOR_IDLE = "#4FD1C5"        # 대기 중: 차분한 청록색
+INDICATOR_COLOR_RECORDING = "#319795"   # 녹음 중: 조금 더 진한 청록색 (색이 안 바뀌어도 깜빡임으로 구분됨)
 
-# 녹음 중일 때 표시등을 깜빡(밝기/투명도 변화)이게 해서, 색 변화가 안 보이는
-# 환경에서도 녹음 중인지 한눈에 구분되게 한다. 투명도(-alpha) 변경은 색 변경보다
-# 훨씬 안정적으로 화면에 반영되기 때문에 이 방식을 쓴다.
+# 녹음 중일 때 표시등의 밝기(투명도)가 사인파(sine wave)처럼 부드럽게
+# 오르내리며 "맥박"치게 한다. 색 변화보다 투명도(-alpha) 변화가 이 환경에서
+# 훨씬 안정적으로 화면에 반영되기 때문에, 상태 구분은 이 펄스가 담당한다.
 INDICATOR_BLINK_WHILE_RECORDING = True
-INDICATOR_BLINK_MS = 450            # 깜빡이는 주기(ms)
-INDICATOR_BLINK_ALPHA_LOW = 0.2     # 깜빡일 때 흐려지는 정도(0~1)
-INDICATOR_BLINK_ALPHA_HIGH = 0.95   # 깜빡일 때 진해지는 정도(0~1)
+INDICATOR_PULSE_PERIOD_MS = 1400    # 한 번 밝아졌다 어두워지는 데 걸리는 시간(ms) - 클수록 느긋한 맥박
+INDICATOR_PULSE_STEP_MS = 40        # 갱신 간격(ms) - 작을수록 더 부드럽게 보임 (25fps 정도)
+INDICATOR_BLINK_ALPHA_LOW = 0.2     # 맥박의 가장 흐린 지점(0~1)
+INDICATOR_BLINK_ALPHA_HIGH = 0.95   # 맥박의 가장 진한 지점(0~1)

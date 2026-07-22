@@ -15,6 +15,7 @@
         반투명은 "-alpha"(창 전체 투명도)로 처리한다.
 """
 
+import math
 import queue
 import sys
 import threading
@@ -94,7 +95,7 @@ class SafetyWindow:
         self._indicator_canvas = None
         self._recording = False
         self._blink_after_id = None
-        self._blink_on = False
+        self._blink_start_time = 0.0
 
     def start(self):
         """반드시 메인 스레드에서 호출 (tkinter 제약)."""
@@ -161,25 +162,27 @@ class SafetyWindow:
             return
         if self._indicator is None or self._blink_after_id is not None:
             return
+        self._blink_start_time = time.monotonic()
         self._blink_step()
 
     def _blink_step(self):
         if not self._recording or self._indicator is None:
             self._blink_after_id = None
             return
-        self._blink_on = not self._blink_on
-        alpha = (
-            config.INDICATOR_BLINK_ALPHA_HIGH
-            if self._blink_on
-            else config.INDICATOR_BLINK_ALPHA_LOW
-        )
+        elapsed_ms = (time.monotonic() - self._blink_start_time) * 1000.0
+        phase = (elapsed_ms / config.INDICATOR_PULSE_PERIOD_MS) * 2 * math.pi
+        # (1 - cos(phase)) / 2 는 0 -> 1 -> 0 을 부드럽게(사인파처럼) 오간다.
+        t = (1 - math.cos(phase)) / 2
+        low = config.INDICATOR_BLINK_ALPHA_LOW
+        high = config.INDICATOR_BLINK_ALPHA_HIGH
+        alpha = low + (high - low) * t
         try:
             self._indicator.attributes("-alpha", alpha)
         except tk.TclError:
             pass
         if self._root is not None:
             self._blink_after_id = self._root.after(
-                config.INDICATOR_BLINK_MS, self._blink_step
+                config.INDICATOR_PULSE_STEP_MS, self._blink_step
             )
 
     def _stop_blink(self):
