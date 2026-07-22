@@ -74,3 +74,11 @@ INDICATOR_OPACITY = 0.55
 
 INDICATOR_COLOR_IDLE = "#808080"        # 대기 중: 회색
 INDICATOR_COLOR_RECORDING = "#e03131"   # 녹음 중: 빨간색
+
+# 녹음 중일 때 표시등을 깜빡(밝기/투명도 변화)이게 해서, 색 변화가 안 보이는
+# 환경에서도 녹음 중인지 한눈에 구분되게 한다. 투명도(-alpha) 변경은 색 변경보다
+# 훨씬 안정적으로 화면에 반영되기 때문에 이 방식을 쓴다.
+INDICATOR_BLINK_WHILE_RECORDING = True
+INDICATOR_BLINK_MS = 450            # 깜빡이는 주기(ms)
+INDICATOR_BLINK_ALPHA_LOW = 0.2     # 깜빡일 때 흐려지는 정도(0~1)
+INDICATOR_BLINK_ALPHA_HIGH = 0.95   # 깜빡일 때 진해지는 정도(0~1)

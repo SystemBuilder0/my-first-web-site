@@ -92,6 +92,9 @@ class SafetyWindow:
         self._text = None
         self._indicator = None
         self._indicator_canvas = None
+        self._recording = False
+        self._blink_after_id = None
+        self._blink_on = False
 
     def start(self):
         """반드시 메인 스레드에서 호출 (tkinter 제약)."""
@@ -153,6 +156,45 @@ class SafetyWindow:
         """다른 스레드에서 호출해서 표시등 색을 바꾸기."""
         self._state_queue.put(is_recording)
 
+    def _start_blink(self):
+        if not config.INDICATOR_BLINK_WHILE_RECORDING:
+            return
+        if self._indicator is None or self._blink_after_id is not None:
+            return
+        self._blink_step()
+
+    def _blink_step(self):
+        if not self._recording or self._indicator is None:
+            self._blink_after_id = None
+            return
+        self._blink_on = not self._blink_on
+        alpha = (
+            config.INDICATOR_BLINK_ALPHA_HIGH
+            if self._blink_on
+            else config.INDICATOR_BLINK_ALPHA_LOW
+        )
+        try:
+            self._indicator.attributes("-alpha", alpha)
+        except tk.TclError:
+            pass
+        if self._root is not None:
+            self._blink_after_id = self._root.after(
+                config.INDICATOR_BLINK_MS, self._blink_step
+            )
+
+    def _stop_blink(self):
+        if self._blink_after_id is not None and self._root is not None:
+            try:
+                self._root.after_cancel(self._blink_after_id)
+            except Exception:
+                pass
+        self._blink_after_id = None
+        if self._indicator is not None:
+            try:
+                self._indicator.attributes("-alpha", config.INDICATOR_OPACITY)
+            except tk.TclError:
+                pass
+
     def _poll(self):
         try:
             while True:
@@ -166,6 +208,7 @@ class SafetyWindow:
         try:
             while True:
                 is_recording = self._state_queue.get_nowait()
+                self._recording = is_recording
                 if self._indicator_canvas is not None:
                     color = (
                         config.INDICATOR_COLOR_RECORDING
@@ -176,6 +219,10 @@ class SafetyWindow:
                     self._indicator_canvas.update_idletasks()
                     if self._indicator is not None:
                         _force_redraw(self._indicator)
+                if is_recording:
+                    self._start_blink()
+                else:
+                    self._stop_blink()
         except queue.Empty:
             pass
 
