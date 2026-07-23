@@ -1,0 +1,74 @@
+[
+  {
+    "title": "Microsoft and Mistral expand strategic partnership to give enterprises and regulated industries frontier AI they can control",
+    "link": "https://news.microsoft.com/source/2026/07/21/microsoft-and-mistral-expand-strategic-partnership-to-give-enterprises-and-regulated-industries-frontier-ai-they-can-control/",
+    "source": "Microsoft Source",
+    "topic": "AI 시장",
+    "published": "2026-07-21",
+    "snippet": "Microsoft and Mistral announced a multibillion-dollar expansion of their strategic partnership, with Microsoft funding Mistral's European data center growth using thousands of NVIDIA Vera Rubin GPUs, and two Mistral models (Medium 3.5, OCR 4) added to Microsoft Foundry and Copilot Studio. The deal targets banks, manufacturers, hospitals and other regulated buyers that need frontier AI without giving up control of their data."
+  },
+  {
+    "title": "AI News Today July 22 2026: 16 Biggest Stories",
+    "link": "https://www.buildfastwithai.com/blogs/ai-news-today-july-22-2026",
+    "source": "Build Fast with AI",
+    "topic": "AI 시장",
+    "published": "2026-07-22",
+    "snippet": "Daily roundup of the biggest AI industry stories for July 22, 2026."
+  },
+  {
+    "title": "HCLTech report exposes widening AI divide with only 18% of enterprises seeing revenue impact despite near-universal adoption",
+    "link": "https://www.webnewswire.com/2026/07/21/hcltech-report-exposes-widening-ai-divide-with-only-18-of-enterprises-seeing-revenue-impact-despite-near-universal-adoption/",
+    "source": "HCLTech (Webnewswire)",
+    "topic": "AI 활용",
+    "published": "2026-07-21",
+    "snippet": "HCLTech's 'AI Impact Imperatives 2026' report, based on a survey of 500 enterprise decision-makers, found 90% of organizations report GenAI and agentic AI are transforming workflows and productivity, but only 18% see significant revenue impact -- exposing a widening gap between AI adoption and measurable business value."
+  },
+  {
+    "title": "Humanoid Global Highlights Formic's Role in Launching Robots for America and Announces Leadership and Membership Updates for the U.S. Robotics Coalition",
+    "link": "https://www.globenewswire.com/news-release/2026/07/22/3331077/0/en/humanoid-global-highlights-formic-s-role-in-launching-robots-for-america-and-announces-leadership-and-membership-updates-for-the-u-s-robotics-coalition.html",
+    "source": "GlobeNewswire",
+    "topic": "로보틱스",
+    "published": "2026-07-22",
+    "snippet": "Humanoid Global Holdings Corp. announced Formic's role in launching 'Robots for America,' a coalition uniting robotics and AI companies, manufacturers, and industry institutions around a shared policy agenda to expand responsible deployment of physical AI and automation across U.S. factories, warehouses, and industrial facilities."
+  },
+  {
+    "title": "NVIDIA Announces Halos for Robotics, the Industry's First Full-Stack Safety System for Physical AI",
+    "link": "https://nvidianews.nvidia.com/news/nvidia-announces-halos-for-robotics-the-industrys-first-full-stack-safety-system-for-physical-ai",
+    "source": "NVIDIA Newsroom",
+    "topic": "로보틱스",
+    "published": "2026-06-23",
+    "snippet": "NVIDIA launched Halos for Robotics, a full-stack safety system spanning industrial AI compute, sensor connectivity, safety software, and a certification lab. Agility Robotics is the first to adopt it for its Digit humanoid, deployed at Amazon, GXO, Schaeffler and Toyota facilities."
+  },
+  {
+    "title": "Vertex acquires Crinetics Pharmaceuticals for $10 billion",
+    "link": "https://www.statnews.com/2026/07/06/vertex-acquires-crinetics-pharmaceuticals/",
+    "source": "STAT News",
+    "topic": "바이오",
+    "published": "2026-07-06",
+    "snippet": "Vertex Pharmaceuticals will acquire all shares of Crinetics Pharmaceuticals for $85 per share in cash, a deal worth approximately $10 billion. The acquisition brings Vertex Crinetics' commercial drug Palsonify (for acromegaly) and a pipeline of other endocrine disease candidates. The deal is expected to close in Q3 2026."
+  },
+  {
+    "title": "Other news to note for July 20, 2026",
+    "link": "https://www.bioworld.com/articles/732745-other-news-to-note-for-july-20-2026?v=preview",
+    "source": "BioWorld",
+    "topic": "바이오",
+    "published": "2026-07-20",
+    "snippet": "Roundup of smaller biotech and pharma industry news items for the day."
+  },
+  {
+    "title": "YouTube clarifies policies around AI slop and upsetting videos",
+    "link": "https://techcrunch.com/2026/07/20/youtube-clarifies-policies-around-ai-slop-and-upsetting-videos/",
+    "source": "TechCrunch",
+    "topic": "유튜브·SNS",
+    "published": "2026-07-20",
+    "snippet": "YouTube updated its monetization policy language to more clearly define which AI-generated and low-quality videos ('AI slop') cannot earn ad revenue, adding a category for 'unsatisfying or off-putting content.' Separately, YouTube eased restrictions so videos discussing profanity or sensitive topics in their first seconds can remain monetized as long as they are not graphic."
+  },
+  {
+    "title": "Is politics on YouTube to be censored?",
+    "link": "https://www.taxresearch.org.uk/Blog/2026/07/22/is-politics-on-youtube-to-be-censored/",
+    "source": "Tax Research UK",
+    "topic": "유튜브·SNS",
+    "published": "2026-07-22",
+    "snippet": "Commentary on a new UK government Green Paper that could change how political content is discovered and moderated on YouTube, Instagram, TikTok and other social platforms."
+  }
+]
