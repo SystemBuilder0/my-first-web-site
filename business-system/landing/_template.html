@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{미끼_제목}}</title>
+<meta name="description" content="{{한줄_설명}}">
+
+<!-- ─────────────────────────────────────────────────────────────
+  유닛 랜딩 템플릿  v1
+
+  사용법 (30분):
+   1) 이 파일을 landing/unit-XXX-{slug}.html 로 복사
+   2) 아래 {{...}} 를 전부 치환  (Ctrl+F 로 "{{" 검색 → 0개면 완료)
+   3) [스티비 폼] 자리에 이메일 툴의 임베드 코드를 붙여넣기
+   4) 커밋 + 푸시 → GitHub Pages 자동 배포
+   5) 모바일에서 열어보고, 내 이메일로 제출 테스트
+
+  치환할 변수:
+   {{미끼_제목}}      예) 3분 만에 내 불안 유형 알아보는 셀프체크
+   {{한줄_설명}}      예) 12개 질문으로 지금 내 불안이 어떤 종류인지 확인합니다
+   {{공감_문장}}      독자가 지금 겪는 상황을 그대로 묘사 (1~2문장)
+   {{혜택_1/2/3}}     이걸 받으면 무엇을 알게 되나 (결과로 쓸 것, 기능 말고)
+   {{작성자_소개}}    한 문단
+   {{제품명}} {{제품_설명}} {{가격}} {{결제_링크}}   ← 판매 섹션(선택)
+
+  ⚠️ 원칙: 이 랜딩은 영상 주제와 1:1로 일치해야 한다.
+     통합 랜딩("모든 자료 모음") 금지 — 전환율이 반토막 난다.
+───────────────────────────────────────────────────────────── -->
+
+<style>
+  :root{
+    --bg:#fbfaf8; --fg:#16150f; --muted:#6b6862;
+    --card:#ffffff; --line:#e6e2da; --accent:#1f6f5c; --accent-fg:#ffffff;
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131311; --fg:#f0eee8; --muted:#a3a099;
+      --card:#1c1b19; --line:#2e2c28; --accent:#4fbf9f; --accent-fg:#0d1512;
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    line-height:1.75; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:0 20px}
+  section{padding:56px 0; border-bottom:1px solid var(--line)}
+  section:last-of-type{border-bottom:0}
+
+  .hero{padding-top:72px; text-align:center}
+  .eyebrow{
+    display:inline-block; font-size:13px; letter-spacing:.08em; font-weight:700;
+    color:var(--accent); border:1px solid var(--line); border-radius:999px;
+    padding:6px 14px; margin-bottom:22px;
+  }
+  h1{font-size:clamp(28px,6.5vw,40px); line-height:1.28; margin:0 0 16px; letter-spacing:-.02em}
+  h2{font-size:clamp(20px,4.5vw,25px); line-height:1.4; margin:0 0 20px; letter-spacing:-.01em}
+  .lead{font-size:17px; color:var(--muted); margin:0 auto 32px; max-width:34em}
+
+  .form-card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px 22px; margin-top:8px; text-align:left;
+  }
+  .form-card p.note{font-size:13px; color:var(--muted); margin:14px 0 0; text-align:center}
+
+  /* 이메일 툴 임베드가 이 안에 들어감. 아래 .fallback 은 임베드 전 미리보기용. */
+  .fallback input{
+    width:100%; padding:14px 16px; font-size:16px; margin-bottom:10px;
+    border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--fg);
+  }
+  .fallback button, .btn{
+    display:block; width:100%; padding:15px 18px; font-size:17px; font-weight:700;
+    background:var(--accent); color:var(--accent-fg); border:0; border-radius:10px;
+    cursor:pointer; text-align:center; text-decoration:none;
+  }
+  .btn:hover, .fallback button:hover{opacity:.9}
+
+  ul.benefits{list-style:none; padding:0; margin:0}
+  ul.benefits li{
+    position:relative; padding:14px 0 14px 34px; border-bottom:1px solid var(--line);
+  }
+  ul.benefits li:last-child{border-bottom:0}
+  ul.benefits li::before{
+    content:"✓"; position:absolute; left:6px; top:14px;
+    color:var(--accent); font-weight:800;
+  }
+
+  .quote{
+    background:var(--card); border-left:3px solid var(--accent);
+    padding:18px 20px; border-radius:0 var(--radius) var(--radius) 0; color:var(--muted);
+  }
+  .price{font-size:22px; font-weight:800; margin:4px 0 18px}
+  footer{padding:40px 0 60px; text-align:center; font-size:13px; color:var(--muted)}
+  footer a{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ── HERO : 여기서 전환의 80%가 결정된다 ── -->
+  <section class="hero">
+    <span class="eyebrow">무료 자료</span>
+    <h1>{{미끼_제목}}</h1>
+    <p class="lead">{{한줄_설명}}</p>
+
+    <div class="form-card">
+      <!-- ▼▼▼ 여기에 스티비(또는 사용 중인 이메일 툴) 임베드 코드를 붙여넣기 ▼▼▼ -->
+      <div class="fallback">
+        <input type="email" placeholder="이메일 주소" aria-label="이메일 주소">
+        <button type="button">무료로 받기</button>
+      </div>
+      <!-- ▲▲▲ 임베드 코드로 위 .fallback 블록을 통째로 교체 ▲▲▲ -->
+      <p class="note">입력하신 주소로 바로 보내드립니다. 언제든 수신 거부할 수 있습니다.</p>
+    </div>
+  </section>
+
+  <!-- ── 공감 : 독자의 현재 상황을 그대로 묘사 ── -->
+  <section>
+    <h2>혹시 이런 상태인가요?</h2>
+    <div class="quote">{{공감_문장}}</div>
+  </section>
+
+  <!-- ── 혜택 : 기능이 아니라 '결과'로 쓴다 ── -->
+  <section>
+    <h2>이 자료로 알게 되는 것</h2>
+    <ul class="benefits">
+      <li>{{혜택_1}}</li>
+      <li>{{혜택_2}}</li>
+      <li>{{혜택_3}}</li>
+    </ul>
+  </section>
+
+  <!-- ── 작성자 ── -->
+  <section>
+    <h2>누가 만들었나요</h2>
+    <p style="color:var(--muted); margin:0">{{작성자_소개}}</p>
+  </section>
+
+  <!-- ── 최종 CTA : 스크롤 끝에서 한 번 더 ── -->
+  <section style="text-align:center">
+    <h2>지금 무료로 받아보세요</h2>
+    <div class="form-card">
+      <!-- 위와 동일한 임베드 코드를 한 번 더 -->
+      <div class="fallback">
+        <input type="email" placeholder="이메일 주소" aria-label="이메일 주소">
+        <button type="button">무료로 받기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── (선택) 유료 제품 : 미끼 수령 후 페이지에 쓰거나, 메일 3통째에 연결 ──
+  <section>
+    <h2>{{제품명}}</h2>
+    <p style="color:var(--muted)">{{제품_설명}}</p>
+    <p class="price">{{가격}}원</p>
+    <a class="btn" href="{{결제_링크}}">구매하기</a>
+  </section>
+  -->
+
+  <footer>
+    © <span id="y"></span> {{브랜드명}} ·
+    <a href="mailto:{{문의_이메일}}">문의</a>
+    <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
+  </footer>
+
+</div>
+</body>
+</html>
