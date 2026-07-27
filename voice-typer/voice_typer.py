@@ -26,6 +26,8 @@
 import os
 import sys
 import threading
+import time
+from typing import List, NamedTuple
 
 
 def _register_nvidia_dll_dirs():
@@ -81,6 +83,42 @@ def rms_dbfs(block: np.ndarray) -> float:
     return 20 * np.log10(rms + 1e-12)
 
 
+# ---------------- 실시간(stream) 모드용 순수 계산 함수들 ----------------
+# 아래 세 함수는 오디오/GPU와 무관한 순수 로직이라 따로 테스트할 수 있다.
+
+
+class SWord(NamedTuple):
+    """인식된 단어 하나. start/end는 '녹음 시작 시점'을 0으로 하는 절대 시각(초)."""
+
+    text: str
+    start: float
+    end: float
+
+
+def normalize_word(text: str) -> str:
+    """두 인식 결과의 단어가 '같은 단어'인지 비교하기 위한 정규화.
+    앞뒤 공백과 문장부호는 자주 바뀌므로 무시한다."""
+    return text.strip().strip(".,!?;:\"'()[]{}…·~-").strip().lower()
+
+
+def agreed_prefix_len(prev: List[SWord], curr: List[SWord]) -> int:
+    """연속된 두 번의 인식 결과에서, 앞에서부터 몇 개의 단어가 서로 일치하는지.
+    이 개수만큼만 '확정'해서 타이핑한다 (LocalAgreement)."""
+    n = 0
+    for a, b in zip(prev, curr):
+        na, nb = normalize_word(a.text), normalize_word(b.text)
+        if na and na == nb:
+            n += 1
+        else:
+            break
+    return n
+
+
+def words_after(words: List[SWord], t: float, eps: float = 0.02) -> List[SWord]:
+    """시각 t까지는 이미 확정(타이핑)됐으므로, 그 뒤에 오는 단어만 남긴다."""
+    return [w for w in words if w.end > t + eps]
+
+
 def pick_microphone(safety_window: SafetyWindow):
     """config.MIC_NAME과 이름이 겹치는 마이크를 고르고, 없으면 시스템 기본 마이크."""
     if config.MIC_NAME:
@@ -116,8 +154,18 @@ class VoiceTyper:
         self._lock = threading.Lock()
         self._stop_event: threading.Event | None = None
         self._record_thread: threading.Thread | None = None
+        self._stream_thread: threading.Thread | None = None
 
     # ---------------- 공통: 녹음 -> 변환 -> 출력 ----------------
+
+    def _type(self, text: str):
+        """커서 위치에 실제로 타이핑. 실패해도 프로그램은 계속 돈다."""
+        if not text or not config.TYPE_AT_CURSOR:
+            return
+        try:
+            keyboard.write(text)
+        except Exception as exc:  # 타이핑 실패해도 안전창엔 남는다
+            self.safety_window.append(f"[타이핑 실패: {exc}]")
 
     def _transcribe_and_emit(self, audio: np.ndarray):
         if audio.size == 0:
@@ -179,6 +227,148 @@ class VoiceTyper:
                 audio = np.concatenate(self._frames) if self._frames else np.array([], dtype="float32")
                 self._frames = []
             self._run_transcription_async(audio)
+
+    # ---------------- MODE == "stream" (실시간 타이핑) ----------------
+
+    def _transcribe_words(self, audio: np.ndarray, offset: float) -> List[SWord]:
+        """오디오를 인식해서 단어 목록으로 돌려준다.
+        offset은 이 오디오 버퍼의 첫 샘플이 '녹음 시작'으로부터 몇 초 뒤인지 (앞부분을
+        잘라냈을 수 있으므로), 단어 시각을 절대 시각으로 맞추는 데 쓴다."""
+        segments, _info = self.model.transcribe(
+            audio,
+            language=config.LANGUAGE,
+            vad_filter=True,
+            word_timestamps=True,
+            # 실시간에서는 같은 구간을 반복해서 인식하므로, 직전 문맥에 끌려가
+            # 결과가 흔들리지 않도록 끈다.
+            condition_on_previous_text=False,
+            beam_size=config.STREAM_BEAM_SIZE,
+        )
+        words: List[SWord] = []
+        for seg in segments:
+            for w in (seg.words or []):
+                if w.word.strip():
+                    words.append(SWord(w.word, w.start + offset, w.end + offset))
+        return words
+
+    def _stream_worker(self, stop_event: threading.Event):
+        """말하는 도중에도 계속 인식해서, 확정된 부분만 바로 타이핑한다."""
+        offset = 0.0          # 현재 버퍼 맨 앞이 녹음 시작으로부터 몇 초 지점인지
+        last_end = 0.0        # 여기까지는 이미 확정(타이핑)했다는 절대 시각
+        prev_words: List[SWord] = []
+        session_text = ""
+        first_commit = True
+        next_run = time.monotonic()
+
+        while True:
+            stopping = stop_event.is_set()
+            if not stopping and time.monotonic() < next_run:
+                time.sleep(0.02)
+                continue
+
+            with self._lock:
+                audio = (
+                    np.concatenate(self._frames)
+                    if self._frames
+                    else np.zeros(0, dtype="float32")
+                )
+
+            if audio.size < int(config.SAMPLE_RATE * config.STREAM_MIN_AUDIO_SEC):
+                if stopping:
+                    break
+                next_run = time.monotonic() + config.STREAM_INTERVAL_SEC
+                continue
+
+            try:
+                words = self._transcribe_words(audio, offset)
+            except Exception as exc:
+                self.safety_window.append(f"[인식 오류: {exc}]")
+                if stopping:
+                    break
+                next_run = time.monotonic() + config.STREAM_INTERVAL_SEC
+                continue
+
+            pending = words_after(words, last_end)
+
+            if stopping:
+                # 녹음이 끝났으니 남은 것은 더 기다릴 필요 없이 전부 확정한다.
+                commit = pending
+            else:
+                # 연속된 두 번의 결과가 일치하는 앞부분만 확정한다.
+                k = agreed_prefix_len(prev_words, pending)
+                # 안전장치: 녹음 맨 끝에 걸친 단어는 뒷말이 붙으면 해석이 바뀔 수
+                # 있으므로, 뒤에 소리가 충분히 쌓이기 전에는 확정하지 않는다.
+                buffer_end = offset + audio.size / config.SAMPLE_RATE
+                stable_until = buffer_end - config.STREAM_RIGHT_CONTEXT_SEC
+                while k > 0 and pending[k - 1].end > stable_until:
+                    k -= 1
+                commit = pending[:k]
+                prev_words = pending[k:]
+
+            if commit:
+                text = "".join(w.text for w in commit)
+                if first_commit:
+                    text = text.lstrip()
+                    first_commit = False
+                self._type(text)
+                session_text += text
+                last_end = commit[-1].end
+
+            if stopping:
+                break
+
+            # 버퍼가 너무 길어지면, 이미 확정된 앞부분을 잘라내서
+            # 매번 다시 인식하는 양이 무한정 늘어나지 않게 한다.
+            buffer_sec = audio.size / config.SAMPLE_RATE
+            cut_sec = (last_end - offset) - config.STREAM_KEEP_BACK_SEC
+            if buffer_sec > config.STREAM_MAX_BUFFER_SEC and cut_sec > 0:
+                cut_n = int(cut_sec * config.SAMPLE_RATE)
+                with self._lock:
+                    current = (
+                        np.concatenate(self._frames)
+                        if self._frames
+                        else np.zeros(0, dtype="float32")
+                    )
+                    self._frames = [current[cut_n:]]
+                offset += cut_n / config.SAMPLE_RATE
+
+            next_run = time.monotonic() + config.STREAM_INTERVAL_SEC
+
+        if session_text:
+            self._type(" ")  # 다음 문장과 붙지 않도록
+            self.safety_window.append(session_text.strip())
+        else:
+            self.safety_window.append("[인식된 말이 없음]")
+        self.safety_window.set_recording(False)
+
+    def toggle_stream(self):
+        with self._lock:
+            starting = not self.recording
+            self.recording = starting
+
+        if starting:
+            # 앞선 세션의 마무리 인식이 아직 돌고 있으면 끝날 때까지 기다린다.
+            if self._stream_thread is not None and self._stream_thread.is_alive():
+                self._stream_thread.join(timeout=10)
+
+            with self._lock:
+                self._frames = []
+            self._stop_event = threading.Event()
+            self._record_thread = threading.Thread(
+                target=self._record_loop, args=(self._stop_event,), daemon=True
+            )
+            self._record_thread.start()
+            self._stream_thread = threading.Thread(
+                target=self._stream_worker, args=(self._stop_event,), daemon=True
+            )
+            self._stream_thread.start()
+            self.safety_window.append("[녹음 시작 - 말하는 대로 바로 타이핑됩니다]")
+            self.safety_window.set_recording(True)
+        else:
+            # stop_event만 알려주고 바로 빠져나온다. 남은 마무리 인식은
+            # 백그라운드에서 끝내므로 단축키가 멈춘 것처럼 느껴지지 않는다.
+            self._stop_event.set()
+            self.safety_window.append("[녹음 종료 - 마무리 중...]")
 
     # ---------------- MODE == "vad" ----------------
 
@@ -242,7 +432,9 @@ def main():
     def setup_and_bind():
         typer = VoiceTyper(safety_window)
 
-        if config.MODE == "toggle":
+        if config.MODE == "stream":
+            keyboard.add_hotkey(config.HOTKEY, typer.toggle_stream, suppress=config.SUPPRESS_HOTKEY)
+        elif config.MODE == "toggle":
             keyboard.add_hotkey(config.HOTKEY, typer.toggle_recording, suppress=config.SUPPRESS_HOTKEY)
         elif config.MODE == "vad":
             keyboard.add_hotkey(config.HOTKEY, typer.toggle_vad, suppress=config.SUPPRESS_HOTKEY)
