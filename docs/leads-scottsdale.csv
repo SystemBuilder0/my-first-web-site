@@ -5,26 +5,26 @@ CONFIRMED,dental,North Scottsdale Dentistry,info@northscottsdaledentistry.com,no
 CONFIRMED,dental,Creative Dental Specialists,info@creativedentalspecialists.com,creativedentalspecialists.com,"Scottsdale, AZ",독립 · 임플란트 전문
 CONFIRMED,dental,Advanced Dentistry & Implant Center,adscottsdale@gmail.com,advanceddentistryscottsdale.com,"Scottsdale, AZ",gmail 사용 = 마케팅 미성숙 신호(기회)
 CONFIRMED,restaurant,Pasta Brioni,Dave@pastabrioni.com,pastabrioni.com,"Scottsdale, AZ",가족경영 35년 · 대표자 직통
-NEED_EMAIL,medspa,Skin Wellness Med Spa,,skinwellnessmedspa.com,"Scottsdale, AZ",7246 E First St
-NEED_EMAIL,medspa,Pearl Medspa,,pearlmedspa.com,"Scottsdale, AZ",7144 E Stetson Dr
-NEED_EMAIL,medspa,Blume Skin & Body,,blumeskintreatment.com,"Scottsdale, AZ",8575 E Princess Dr
-NEED_EMAIL,medspa,Rejuvience Med Spa,,,"Scottsdale, AZ",10601 N Hayden Rd · 자사 사이트 확인 필요
-NEED_EMAIL,medspa,The Skin Shop Medspa,,theskinshopmedspascottsdale.com,"Scottsdale, AZ",RN 오너 운영 · 독립
-NEED_EMAIL,medspa,DHH Med Spa,,dhhmedspa.com,"Scottsdale, AZ",독립 · 원장 Megan Davies
-NEED_EMAIL,medspa,Skin Savvy Scottsdale,,skinsavvyscottsdale.net,"Scottsdale, AZ",독립
-NEED_EMAIL,medspa,NAKEDMD Scottsdale,,nakedmd.com,"Scottsdale, AZ",독립 여부 재확인 필요
-NEED_EMAIL,dental,Total Freedom Dental Implant Center,,totalfreedomdentalimplants.com,"Scottsdale, AZ",임플란트 전문 단일 매장
-NEED_EMAIL,dental,Scottsdale Dental Solutions,,scottsdaledentalsolutions.com,"Scottsdale, AZ",
-NEED_EMAIL,dental,My Scottsdale Dentist,,myscottsdaledentist.com,"Scottsdale, AZ",
-NEED_EMAIL,dental,Dentistry of Old Town Scottsdale,,dentistryofoldtownscottsdale.com,"Scottsdale, AZ",
-NEED_EMAIL,dental,Scottsdale Smiles,,scottsdale-smiles.com,"Scottsdale, AZ",
-NEED_EMAIL,dental,Brilliant Smiles Dentistry,,brilliantsmilesdentistry.com,"Scottsdale, AZ",
-NEED_EMAIL,gym,Discover Strength Scottsdale,,discoverstrength.com,"Scottsdale, AZ",9220 E Via de Ventura · 다지점 여부 확인 필요
-NEED_EMAIL,gym,Studio Scottsdale Fitness,,studioscottsdalefitness.com,"Scottsdale, AZ",6730 E McDowell Rd · 독립
-NEED_EMAIL,gym,Body Technologies,,btgym.com,"Scottsdale, AZ",North Scottsdale 부티크 · 독립
-NEED_EMAIL,restaurant,Cafe Monarch,,cafemonarch.com,"Scottsdale, AZ",가족경영 · 파인다이닝 · 예산 여력 높음
-NEED_EMAIL,restaurant,Frank & Lupe's,,frankandlupesaz.com,"Scottsdale, AZ",1980년~ 가족경영 멕시칸
-NEED_EMAIL,restaurant,Farm & Craft,,ilovefarmandcraft.com,"Scottsdale, AZ",소규모 다지점 · 경계선 케이스
+NEED_EMAIL,medspa,Skin Wellness Med Spa,,skinwellnessmedspa.com,"Scottsdale, AZ",7246 E First St · fetch blocked by proxy
+NEED_EMAIL,medspa,Pearl Medspa,,pearlmedspa.com,"Scottsdale, AZ",7144 E Stetson Dr · fetch blocked by proxy
+NEED_EMAIL,medspa,Blume Skin & Body,,blumeskintreatment.com,"Scottsdale, AZ",8575 E Princess Dr · fetch blocked by proxy
+NEED_EMAIL,medspa,Rejuvience Med Spa,,,"Scottsdale, AZ",10601 N Hayden Rd · 자사 사이트 확인 필요 · no website domain
+NEED_EMAIL,medspa,The Skin Shop Medspa,,theskinshopmedspascottsdale.com,"Scottsdale, AZ",RN 오너 운영 · 독립 · fetch blocked by proxy
+NEED_EMAIL,medspa,DHH Med Spa,,dhhmedspa.com,"Scottsdale, AZ",독립 · 원장 Megan Davies · fetch blocked by proxy
+NEED_EMAIL,medspa,Skin Savvy Scottsdale,,skinsavvyscottsdale.net,"Scottsdale, AZ",독립 · fetch blocked by proxy
+NEED_EMAIL,medspa,NAKEDMD Scottsdale,,nakedmd.com,"Scottsdale, AZ",독립 여부 재확인 필요 · fetch blocked by proxy
+NEED_EMAIL,dental,Total Freedom Dental Implant Center,,totalfreedomdentalimplants.com,"Scottsdale, AZ",임플란트 전문 단일 매장 · fetch blocked by proxy
+NEED_EMAIL,dental,Scottsdale Dental Solutions,,scottsdaledentalsolutions.com,"Scottsdale, AZ",fetch blocked by proxy
+NEED_EMAIL,dental,My Scottsdale Dentist,,myscottsdaledentist.com,"Scottsdale, AZ",fetch blocked by proxy
+NEED_EMAIL,dental,Dentistry of Old Town Scottsdale,,dentistryofoldtownscottsdale.com,"Scottsdale, AZ",fetch blocked by proxy
+NEED_EMAIL,dental,Scottsdale Smiles,,scottsdale-smiles.com,"Scottsdale, AZ",fetch blocked by proxy
+NEED_EMAIL,dental,Brilliant Smiles Dentistry,,brilliantsmilesdentistry.com,"Scottsdale, AZ",fetch blocked by proxy
+NEED_EMAIL,gym,Discover Strength Scottsdale,,discoverstrength.com,"Scottsdale, AZ",9220 E Via de Ventura · 다지점 여부 확인 필요 · fetch blocked by proxy
+NEED_EMAIL,gym,Studio Scottsdale Fitness,,studioscottsdalefitness.com,"Scottsdale, AZ",6730 E McDowell Rd · 독립 · fetch blocked by proxy
+NEED_EMAIL,gym,Body Technologies,,btgym.com,"Scottsdale, AZ",North Scottsdale 부티크 · 독립 · fetch blocked by proxy
+NEED_EMAIL,restaurant,Cafe Monarch,,cafemonarch.com,"Scottsdale, AZ",가족경영 · 파인다이닝 · 예산 여력 높음 · fetch blocked by proxy
+NEED_EMAIL,restaurant,Frank & Lupe's,,frankandlupesaz.com,"Scottsdale, AZ",1980년~ 가족경영 멕시칸 · fetch blocked by proxy
+NEED_EMAIL,restaurant,Farm & Craft,,ilovefarmandcraft.com,"Scottsdale, AZ",소규모 다지점 · 경계선 케이스 · fetch blocked by proxy
 EXCLUDED,gym,Barry's Scottsdale,,barrys.com,"Scottsdale, AZ",프랜차이즈 — 본사 마케팅팀 존재
 EXCLUDED,gym,BODY20 North Scottsdale,,body20.com,"Scottsdale, AZ",프랜차이즈
 EXCLUDED,medspa,SkinSpirit Scottsdale,,skinspirit.com,"Scottsdale, AZ",전국 체인
