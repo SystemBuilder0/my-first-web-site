@@ -19,6 +19,16 @@ powershell -ExecutionPolicy Bypass -File .\Get-StorageReport.ps1
 
 읽기 전용이라 아무것도 지우지 않습니다. 바탕화면에 `storage-report_날짜.txt` 가 생깁니다.
 
+**이미 용량이 부족한 상태라면** 정리 스크립트를 씁니다. 기본이 시뮬레이션이라 그냥 돌려도 안전합니다.
+
+```powershell
+# 1단계: 뭐가 얼마나 나오는지 보기만 (삭제 없음)
+powershell -ExecutionPolicy Bypass -File .\Free-DiskSpace.ps1
+
+# 2단계: 관리자 PowerShell 에서 실제 실행 (항목마다 y/N 확인)
+powershell -ExecutionPolicy Bypass -File .\Free-DiskSpace.ps1 -Execute
+```
+
 ---
 
 ## 1. 용량이 차는 원인은 대개 이 5가지
