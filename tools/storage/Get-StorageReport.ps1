@@ -154,7 +154,12 @@ Write-Line ('-' * 78)
 Write-Line ('{0,-32} {1}' -f '위 항목 합계', (Format-Size $hogTotal))
 
 # WSL 가상디스크 (있을 때만)
-$wsl = Get-ChildItem -Path "$env:LOCALAPPDATA\Packages" -Filter 'ext4.vhdx' -Recurse -Force -ErrorAction SilentlyContinue
+$wslRoots = @("$env:LOCALAPPDATA\Packages", "$env:LOCALAPPDATA\wsl", "$env:LOCALAPPDATA\Docker")
+$wsl = foreach ($r in $wslRoots) {
+    if (Test-Path -LiteralPath $r -ErrorAction SilentlyContinue) {
+        Get-ChildItem -Path $r -Filter '*.vhdx' -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
 if ($wsl) {
     Write-Line ''
     Write-Line 'WSL 가상디스크 (ext4.vhdx) — 한 번 커지면 자동으로 줄지 않음:'

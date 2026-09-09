@@ -170,8 +170,11 @@ powershell -ExecutionPolicy Bypass -File .\Get-StorageReport.ps1
 **WSL vhdx가 함정인 이유:** WSL 안에서 파일을 지워도 `.vhdx` 파일 크기는 **줄어들지 않습니다.** 명시적으로 압축해야 합니다.
 
 ```powershell
-# 1) 크기 확인
-Get-ChildItem "$env:LOCALAPPDATA\Packages" -Filter '*.vhdx' -Recurse -Force |
+# 1) 크기 확인 — 설치 방식에 따라 위치가 다르므로 세 곳을 모두 봅니다
+#    스토어 설치 → Packages\ / 독립 실행형 wsl.exe 설치 → wsl\ / Docker → Docker\
+@("$env:LOCALAPPDATA\Packages", "$env:LOCALAPPDATA\wsl", "$env:LOCALAPPDATA\Docker") |
+  Where-Object { Test-Path $_ } |
+  ForEach-Object { Get-ChildItem $_ -Filter '*.vhdx' -Recurse -Force -EA SilentlyContinue } |
   Select-Object @{n='GB';e={[math]::Round($_.Length/1GB,1)}}, FullName
 
 # 2) WSL 종료
@@ -316,5 +319,5 @@ GitHub       ← 코드는 어차피 여기 있습니다. 로컬 사본은 언�
 7. WSL vhdx / Docker / node_modules 처리
 8. **저장 공간 센서 켜기 + 캐시 경로 이전** ← 이걸 해야 끝납니다
 
-세부 명령어는 같은 폴더의 `CLEANUP-REFERENCE.md`,
+항목별 세부 명령어(20개 대상 × 확인/정리/복구/주의)는 같은 폴더의 `CLEANUP-REFERENCE.md`,
 자동화 스크립트는 `Free-DiskSpace.ps1`(기본 시뮬레이션), 진단은 `Get-StorageReport.ps1`을 참고하세요.

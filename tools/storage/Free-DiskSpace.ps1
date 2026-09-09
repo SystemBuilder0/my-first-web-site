@@ -267,10 +267,16 @@ if ($junk) {
 # 11. WSL / 가상디스크
 Write-Host ''
 Write-Host '[11] 가상디스크 (WSL ext4.vhdx 등)' -ForegroundColor Cyan
-$vhd = Get-ChildItem -LiteralPath "$env:LOCALAPPDATA\Packages" -Filter '*.vhdx' -Recurse -Force -ErrorAction SilentlyContinue
+$vhdRoots = @("$env:LOCALAPPDATA\Packages", "$env:LOCALAPPDATA\wsl", "$env:LOCALAPPDATA\Docker")
+$vhd = foreach ($r in $vhdRoots) {
+    if (Test-Path -LiteralPath $r -ErrorAction SilentlyContinue) {
+        Get-ChildItem -LiteralPath $r -Filter '*.vhdx' -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
 if ($vhd) {
     $vhd | ForEach-Object { Write-Host ('       {0,12}  {1}' -f (Format-Size $_.Length), $_.FullName) }
     Write-Host '     → 안에서 파일을 지워도 이 크기는 안 줄어듭니다. 압축 필요:' -ForegroundColor DarkGray
+    Write-Host '       (스토어 설치는 Packages\, 독립 설치는 wsl\ 아래에 있습니다)' -ForegroundColor DarkGray
     Write-Host '       wsl --shutdown   후   Optimize-VHD -Path <경로> -Mode Full   (Hyper-V 모듈 필요)' -ForegroundColor DarkGray
     Write-Host '       또는 diskpart:  select vdisk file="<경로>"  →  attach vdisk readonly  →  compact vdisk  →  detach vdisk' -ForegroundColor DarkGray
 } else { Write-Host '     (없음)' -ForegroundColor DarkGray }
