@@ -60,7 +60,31 @@
 > **순서를 지키세요.** 아래는 "확실히 확보되는 것 → 임시공간을 쓰는 것" 순입니다.
 > 여유 8GB 상태에서 DISM부터 돌리면 실패합니다.
 
-모두 **관리자 PowerShell**에서 실행합니다. (시작 → `powershell` 우클릭 → 관리자 권한으로 실행)
+### 0-0. 관리자 권한 확인 — 이걸 먼저 하세요 (건너뛰지 마세요)
+
+Phase 0의 대부분은 관리자 권한이 없으면 **조용히 또는 오류와 함께 실패합니다.**
+`-EA SilentlyContinue`가 붙어 있어 실패해도 화면에 안 나오는 경우가 있으니, 반드시 먼저 확인합니다.
+
+**여는 법:** `Win` 키 → `powershell` 입력 → **`Ctrl+Shift+Enter`**
+
+**확인:**
+```powershell
+if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+  Write-Host "관리자 확인됨 - 진행하세요" -ForegroundColor Green
+} else {
+  Write-Host "관리자 아님 - 중단하고 다시 여세요" -ForegroundColor Red
+}
+```
+
+빠른 육안 확인법: 창 제목에 "관리자"가 붙고, 시작 경로가 `C:\Users\<이름>`이 아니라 `C:\Windows\system32`입니다.
+
+**권한 없이 실행하면 나타나는 증상 (실제 사례):**
+
+| 증상 | 실제 원인 |
+|---|---|
+| `powercfg /h off` → `예기치 않은 오류(0x65b)` | 권한 부족 (1순위 원인) |
+| `Stop-Service wuauserv` → `서비스를 열 수 없습니다` | 권한 부족 — 가장 확실한 신호 |
+| `Windows\Temp` 삭제했는데 용량이 안 줄어듦 | 권한 부족으로 조용히 실패 |
 
 ### 0-1. 시작 전 상태 기록
 
@@ -88,10 +112,12 @@ powercfg /h off
   Measure-Object Length -Sum).Sum / 1GB
 
 # 확인 후 비우기 (되돌릴 수 없습니다)
-Clear-RecycleBin -Force
+Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 ```
 
 - **예상 회수: 0~20GB** (오래 안 비웠다면 큽니다)
+- 위 크기가 0.1GB 미만이면 건너뛰세요. 비울 게 없으면 `Clear-RecycleBin`이
+  `지정된 파일을 찾을 수 없습니다` 오류를 내는데, **무해합니다** (그래서 `-ErrorAction SilentlyContinue`를 붙였습니다).
 
 ### 0-4. 임시 파일
 
