@@ -94,13 +94,25 @@ Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'" |
                 @{n='전체GB';e={[math]::Round($_.Size/1GB,2)}}
 ```
 
-### 0-2. 최대 절전 모드 해제 — **단일 최대 회수량**
+### 0-2. 최대 절전 모드 해제 — 회수량이 큰 편이지만, **먼저 파일이 있는지 확인하세요**
 
+```powershell
+# 확인 먼저 — 아무것도 출력되지 않으면 회수할 게 없습니다
+Get-Item C:\hiberfil.sys -Force -ErrorAction SilentlyContinue |
+  Select-Object Name, @{n='GB';e={[math]::Round($_.Length/1GB,2)}}
+powercfg /a
+```
+
+`hiberfil.sys`가 없거나 `powercfg /a`가 "최대 절전 모드를 사용할 수 없습니다"라고 하면
+**이미 꺼져 있는 것이므로 이 단계는 건너뜁니다.** 회수량은 0입니다.
+(가상 머신 플랫폼/Hyper-V가 켜져 있거나, 이전에 끈 PC에서 흔합니다.)
+
+파일이 존재할 때만:
 ```powershell
 powercfg /h off
 ```
 
-- **예상 회수: RAM 용량의 약 40~75%** (RAM 16GB → 6~12GB, 32GB → 13~24GB)
+- **예상 회수: `hiberfil.sys`의 실제 크기** (통상 RAM의 40~75%. 단, 파일이 없으면 0)
 - 되돌리기: `powercfg /h on`
 - 부작용: "빠른 시작"과 최대 절전이 꺼집니다. 데스크톱이면 사실상 손해 없습니다. 노트북에서 절전 후 완전 복원을 쓰신다면 나중에 다시 켜세요.
 
@@ -161,14 +173,36 @@ Dism.exe /Online /Cleanup-Image /StartComponentCleanup
 
 | 항목 | 예상 |
 |---|---|
-| 최대 절전 모드 | 6~24GB |
+| 최대 절전 모드 | 0 또는 6~48GB (파일 존재 여부에 따라 전부 아니면 전무) |
 | 휴지통 | 0~20GB |
-| 임시 파일 | 2~10GB |
-| 업데이트 캐시 | 1~8GB |
+| 임시 파일 | 0.3~10GB |
+| 업데이트 캐시 | 0~8GB |
 | DISM | 3~10GB |
-| **합계** | **12~72GB** |
+| **합계** | **0.5~80GB** |
 
-편차가 큰 이유는 RAM 용량과 휴지통 상태에 따라 달라지기 때문입니다.
+> **편차가 큰 이유:** 위 항목은 "있으면 크고 없으면 0"인 성격입니다.
+> 실제 사례로, RAM 64GB 장비인데 최대 절전 모드가 이미 꺼져 있고 업데이트 캐시도
+> 비어 있어 **Phase 0 전체 회수량이 1GB 미만**이었던 경우가 있습니다.
+> **그러니 Phase 0을 다 돌린 뒤에도 부족하면, 추측을 멈추고 Phase 1의 실측(1-1)으로 바로 넘어가세요.**
+> Phase 0은 "싸고 빠른 것부터"일 뿐, 용량 문제의 답이라는 보장은 없습니다.
+
+### 0-8. Phase 0으로 부족했다면 — `C:\Windows\Installer` 확인
+
+```powershell
+$s=(Get-ChildItem "$env:SystemRoot\Installer" -Recurse -Force -File -EA SilentlyContinue |
+    Measure-Object Length -Sum).Sum
+"Installer: {0:N2} GB" -f ($s/1GB)
+```
+
+10GB를 넘는 경우가 드물지 않습니다(주로 Office, Visual Studio, Adobe, SQL Server).
+
+**이 폴더는 절대 직접 삭제하면 안 됩니다.** 설치된 프로그램의 MSI/패치 원본이라
+지우면 제거·복구·업데이트가 깨지고 되돌리기 어렵습니다.
+
+Microsoft가 지원하는 축소 방법은 **안 쓰는 프로그램을 정상 절차로 제거하는 것**뿐입니다
+(설정 → 앱 → 설치된 앱). 제거하면 해당 캐시도 함께 정리됩니다.
+고아 패치 파일만 선별하는 서드파티 도구가 있으나 Microsoft 지원 대상이 아니므로
+다른 수단을 모두 쓴 뒤에 마지막으로 검토하세요.
 
 ---
 
