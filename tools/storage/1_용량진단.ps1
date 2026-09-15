@@ -43,10 +43,10 @@ foreach ($d in (Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3')) {
         $d.DeviceID, $d.VolumeName, (Fmt-GB $d.Size), (Fmt-GB $d.FreeSpace), $pct, $mark)
 }
 
-Write-Host '  [1/4] 영상 편집 프로그램 캐시를 확인하는 중...' -ForegroundColor DarkGray
+Write-Host '  [1/5] 영상 편집 프로그램 캐시를 확인하는 중...' -ForegroundColor DarkGray
 Add-Line ''
 Add-Line '=============================================================='
-Add-Line ' 2. 영상 편집 프로그램이 만든 임시파일 (가장 유력한 범인)'
+Add-Line ' 2. 지금 로그인한 계정의 영상 편집 캐시'
 Add-Line '=============================================================='
 $caches = [ordered]@{
     'Resolve (내 문서)'     = "$env:USERPROFILE\Movies\DaVinci Resolve"
@@ -64,10 +64,44 @@ foreach ($k in $caches.Keys) {
 }
 Add-Line ('{0,-22} {1}' -f '>> 캐시 합계', (Fmt-GB $cacheTotal))
 
-Write-Host '  [2/4] C 드라이브 폴더 크기를 재는 중... (제일 오래 걸립니다)' -ForegroundColor DarkGray
+Write-Host '  [2/5] 계정별 사용량을 확인하는 중...' -ForegroundColor DarkGray
 Add-Line ''
 Add-Line '=============================================================='
-Add-Line ' 3. C 드라이브에서 자리를 많이 차지하는 폴더'
+Add-Line ' 3. 계정별 사용량 (이 PC는 계정이 여러 개입니다)'
+Add-Line '=============================================================='
+$profiles = Get-ChildItem 'C:\Users' -Directory -Force |
+            Where-Object { $_.Name -notmatch '^(Public|Default|All Users|Default User)$' }
+foreach ($u in $profiles) {
+    Add-Line ('{0}   {1}' -f (Fmt-GB (Get-Size $u.FullName)), $u.FullName)
+}
+
+Add-Line ''
+Add-Line '  -- 계정별 영상 캐시 / 다운로드 --'
+foreach ($u in $profiles) {
+    Add-Line ''
+    Add-Line ('  [' + $u.Name + ' 계정]')
+    $perUser = [ordered]@{
+        'Resolve(내문서)'     = ($u.FullName + '\Movies\DaVinci Resolve')
+        'Resolve(설정)'       = ($u.FullName + '\AppData\Roaming\Blackmagic Design\DaVinci Resolve')
+        'Premiere 캐시'       = ($u.FullName + '\AppData\Roaming\Adobe\Common\Media Cache')
+        'Premiere 캐시파일'   = ($u.FullName + '\AppData\Roaming\Adobe\Common\Media Cache Files')
+        'Adobe 임시'          = ($u.FullName + '\AppData\Local\Temp\Adobe')
+        '다운로드'            = ($u.FullName + '\Downloads')
+        '바탕화면'            = ($u.FullName + '\Desktop')
+        '문서'                = ($u.FullName + '\Documents')
+        '비디오'              = ($u.FullName + '\Videos')
+    }
+    foreach ($k in $perUser.Keys) {
+        $sz = Get-Size $perUser[$k]
+        if ($sz -lt 0) { Add-Line ('    {0,-20} {1}' -f $k, '     (없음)') }
+        else           { Add-Line ('    {0,-20} {1}' -f $k, (Fmt-GB $sz)) }
+    }
+}
+
+Write-Host '  [3/5] C 드라이브 폴더 크기를 재는 중... (제일 오래 걸립니다)' -ForegroundColor DarkGray
+Add-Line ''
+Add-Line '=============================================================='
+Add-Line ' 4. C 드라이브에서 자리를 많이 차지하는 폴더'
 Add-Line '=============================================================='
 Get-ChildItem 'C:\' -Directory -Force | ForEach-Object {
     [pscustomobject]@{ Bytes = [double](Get-Size $_.FullName); Path = $_.FullName }
@@ -75,22 +109,22 @@ Get-ChildItem 'C:\' -Directory -Force | ForEach-Object {
     Add-Line ('{0}   {1}' -f (Fmt-GB $_.Bytes), $_.Path)
 }
 
-Write-Host '  [3/4] 영상 작업 폴더를 찾는 중...' -ForegroundColor DarkGray
+Write-Host '  [4/5] 영상 작업 폴더를 찾는 중...' -ForegroundColor DarkGray
 Add-Line ''
 Add-Line '=============================================================='
-Add-Line ' 4. 영상 작업으로 보이는 폴더'
+Add-Line ' 5. 영상 작업으로 보이는 폴더'
 Add-Line '=============================================================='
 $pattern = '비디오|video|오토메이션|automation|유튜브|youtube|factory|팩토리|공장|렌더|render'
 $found = Get-ChildItem 'C:\' -Directory -Recurse -Force |
          Where-Object { $_.Name -match $pattern } | Select-Object -First 25
 if ($found) {
     foreach ($f in $found) { Add-Line ('{0}   {1}' -f (Fmt-GB (Get-Size $f.FullName)), $f.FullName) }
-} else { Add-Line '   (이름으로는 못 찾았습니다. 위 3번 목록을 보세요.)' }
+} else { Add-Line '   (이름으로는 못 찾았습니다. 위 4번 목록을 보세요.)' }
 
-Write-Host '  [4/4] 큰 파일을 찾는 중...' -ForegroundColor DarkGray
+Write-Host '  [5/5] 큰 파일을 찾는 중...' -ForegroundColor DarkGray
 Add-Line ''
 Add-Line '=============================================================='
-Add-Line ' 5. 1GB 넘는 큰 파일 (최대 30개)'
+Add-Line ' 6. 1GB 넘는 큰 파일 (최대 30개)'
 Add-Line '=============================================================='
 Get-ChildItem 'C:\' -Recurse -Force -File |
   Where-Object { $_.Length -gt 1GB } |
