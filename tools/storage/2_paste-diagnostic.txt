@@ -1,0 +1,30 @@
+$out = "$env:USERPROFILE\Desktop\report.txt"
+$L = New-Object System.Collections.Generic.List[string]
+function W($t){ $L.Add($t); Write-Host $t }
+function S($p){ if(!(Test-Path -LiteralPath $p)){return -1}; [double]((Get-ChildItem -LiteralPath $p -Recurse -Force -File -EA 0|Measure-Object Length -Sum).Sum) }
+function G($b){ '{0,8:N1} GB' -f ($b/1GB) }
+W ("PC=" + $env:COMPUTERNAME + "  USER=" + $env:USERNAME + "  " + (Get-Date -Format 'yyyy-MM-dd HH:mm'))
+W ""; W "== 1. DRIVES =="
+Get-CimInstance Win32_LogicalDisk -Filter 'DriveType=3' | %{ if($_.Size){ W ("{0} {1,-12} total {2}  free {3}" -f $_.DeviceID,$_.VolumeName,(G $_.Size),(G $_.FreeSpace)) } }
+Write-Host "  [1/4] scanning user profiles..." -ForegroundColor DarkGray
+W ""; W "== 2. USER PROFILES =="
+$u = Get-ChildItem C:\Users -Directory -Force -EA 0 | ? { $_.Name -notmatch '^(Public|Default|All Users|Default User)$' }
+$u | %{ W ("{0}  {1}" -f (G (S $_.FullName)), $_.FullName) }
+W ""; W "== 3. CACHE / DATA PER USER (only non-empty) =="
+foreach($p in $u){
+  foreach($c in @('Movies\DaVinci Resolve','AppData\Roaming\Blackmagic Design\DaVinci Resolve','AppData\Roaming\Adobe\Common\Media Cache','AppData\Roaming\Adobe\Common\Media Cache Files','AppData\Local\Temp','Downloads','Videos','Documents','Desktop')){
+    $f=Join-Path $p.FullName $c; $z=S $f; if($z -gt 0){ W ("{0}  {1}" -f (G $z), $f) }
+  }
+}
+Write-Host "  [2/4] scanning C: folders (slowest step)..." -ForegroundColor DarkGray
+W ""; W "== 4. TOP FOLDERS ON C: =="
+Get-ChildItem C:\ -Directory -Force -EA 0 | %{ [pscustomobject]@{B=[double](S $_.FullName);P=$_.FullName} } | Sort-Object B -Descending | Select-Object -First 15 | %{ W ("{0}  {1}" -f (G $_.B), $_.P) }
+Write-Host "  [3/4] looking for video folders..." -ForegroundColor DarkGray
+W ""; W "== 5. VIDEO-LIKE FOLDERS =="
+Get-ChildItem C:\ -Directory -Recurse -Force -EA 0 | ? { $_.Name -match 'video|automation|youtube|factory|render|shorts|clip' } | Select-Object -First 20 | %{ W ("{0}  {1}" -f (G (S $_.FullName)), $_.FullName) }
+Write-Host "  [4/4] looking for big files..." -ForegroundColor DarkGray
+W ""; W "== 6. FILES OVER 1GB =="
+Get-ChildItem C:\ -Recurse -Force -File -EA 0 | ? { $_.Length -gt 1GB } | Sort-Object Length -Descending | Select-Object -First 30 | %{ W ("{0}  {1:yyyy-MM-dd}  {2}" -f (G $_.Length), $_.LastWriteTime, $_.FullName) }
+$L -join "`r`n" | Out-File $out -Encoding utf8 -Width 500
+Write-Host ""; Write-Host ("SAVED: " + $out) -ForegroundColor Green
+notepad $out
