@@ -1,7 +1,5 @@
 ## 4단계. 신한 외화(USD) 알림 파싱 — 확정 (2026-11-13, 장준혁 확정)
 
-참고 구현·테스트: `finance-hub/shinhan_alert_parser.py`, `finance-hub/test_shinhan_alert_parser.py`
-
 ### 4-1. 수집
 - Gmail 검색: `subject:[신한알림] from:topjang3@gmail.com` (기간은 직전 실행 이후, 첫 실행은 `newer_than:3d` 권장)
 - 같은 제목이라 한 스레드로 묶인다. **스레드가 아니라 메시지 단위로** 모든 메시지를 읽는다(get_thread로 전체 메시지 확보 — 검색 결과 미리보기는 일부 메시지만 보여 줌).
